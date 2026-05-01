@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .userDetailsService(userDetailsService) // ✅ NOW VALID
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/tasks/register", "/index.html").permitAll()
+                        .requestMatchers("/", "/index.html", "/login", "/tasks/register").permitAll()
                         .anyRequest().authenticated()
                 )
 

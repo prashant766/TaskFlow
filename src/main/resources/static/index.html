@@ -967,8 +967,15 @@
         fetch(baseUrl, {
             credentials: "include"
         })
-            .then(r => r.json())
-            .then(data => { allTasks = data; renderAll(); })
+            .then(r => {
+                console.log("STATUS:", r.status);   // 👈 ADD HERE
+                return r.json();
+            })
+            .then(data => {
+                console.log("DATA:", data);         // 👈 ALSO ADD THIS
+                allTasks = data;
+                renderAll();
+            })
             .catch(err => {
                 console.error("GET TASK ERROR:", err);
             });
@@ -1144,30 +1151,40 @@
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
             },
-            body: `username=${username}&password=${password}`,
+            body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
             credentials: "include"
         })
-            .then(() => {
-                return fetch("/tasks", { credentials: "include" });
-            })
             .then(res => {
-                if (res.status === 200) {
+                console.log("LOGIN STATUS:", res.status);
 
-                    // ✅ REMOVE BLOCKING AUTH SCREEN
-                    const auth = document.getElementById("authPage");
-                    auth.style.display = "none";
-                    auth.style.pointerEvents = "none";
-
-                    document.querySelector(".layout").style.display = "flex";
-
-                    getTasks();
-
-                } else {
-                    alert("Login failed");
+                if (res.status !== 200 && res.status !== 302) {
+                    throw new Error("Login failed");
                 }
+
+                return fetch("/tasks", {
+                    credentials: "include"
+                });
             })
-            .catch(() => alert("Login error"));
+            .then(r => {
+                console.log("TASK STATUS:", r.status);
+                return r.json();
+            })
+            .then(data => {
+                console.log("TASK DATA:", data);
+
+                document.getElementById("authPage").style.display = "none";
+                document.querySelector(".layout").style.display = "flex";
+
+                allTasks = data;
+                renderAll();
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Login/session failed");
+            });
     }
+
+
     function register() {
         const username = document.getElementById("regUser").value;
         const password = document.getElementById("regPass").value;
