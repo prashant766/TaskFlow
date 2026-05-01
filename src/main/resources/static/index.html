@@ -662,22 +662,30 @@
 </div>
 
 <script>
-    // Poll your Render backend until it responds
+    function showAuth() {
+        document.getElementById('serverLoader').style.display = 'none';
+        document.getElementById('authPage').style.display = 'flex';
+    }
+
     function pingServer() {
         fetch("https://taskflow-1-ls3h.onrender.com/tasks/health", {
             credentials: "include"
         })
             .then(res => {
                 if (res.ok || res.status === 401) {
-                    // 401 is fine — server is UP, just not logged in yet
-                    document.getElementById('serverLoader').style.display = 'none';
-                    document.getElementById('authPage').style.display = 'flex';
+                    showAuth();
                 } else {
-                    setTimeout(pingServer, 5000);
+                    setTimeout(pingServer, 3000);
                 }
             })
-            .catch(() => setTimeout(pingServer, 5000)); // still sleeping, retry
+            .catch(() => setTimeout(pingServer, 3000));
     }
+
+    // 🔥 FAILSAFE (this is what saves you from blank screen)
+    setTimeout(() => {
+        console.log("Fallback triggered");
+        showAuth();
+    }, 10000);
 
     window.onload = function() {
         document.getElementById('authPage').style.display = 'none';
@@ -1230,21 +1238,6 @@
                 switchAuthTab('login');
             })
             .catch(() => alert("Registration failed"));
-    }
-
-    function pingServer() {
-        fetch("https://taskflow-1-ls3h.onrender.com/tasks/health", {
-            credentials: "include"
-        })
-            .then(res => {
-                if (res.ok || res.status === 401) {
-                    document.getElementById('serverLoader').style.display = 'none';
-                    document.getElementById('authPage').style.display = 'flex';
-                } else {
-                    setTimeout(pingServer, 3000);
-                }
-            })
-            .catch(() => setTimeout(pingServer, 3000));
     }
 
     /* ── AUTH TABS ── */
