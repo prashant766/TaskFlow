@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow — Smart Task Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:        #09090D;
+            --surface:   #0E0E16;
+            --surface2:  #13131E;
+            --surface3:  #191927;
+            --border:    rgba(255,255,255,0.07);
+            --border2:   rgba(255,255,255,0.13);
+            --gold:      #C4A35A;
+            --gold2:     #E2C98A;
+            --gold-bg:   rgba(196,163,90,0.08);
+            --gold-glow: rgba(196,163,90,0.15);
+            --text:      #F2EEE6;
+            --text2:     #8A8796;
+            --text3:     #42404E;
+            --green:     #4ade80;
+            --green-bg:  rgba(74,222,128,0.08);
+            --amber:     #fbbf24;
+            --amber-bg:  rgba(251,191,36,0.08);
+            --red:       #f87171;
+            --red-bg:    rgba(248,113,113,0.08);
+            --blue:      #60a5fa;
+            --blue-bg:   rgba(96,165,250,0.08);
+            --sidebar-w: 252px;
+        }
+        body.light {
+            --bg:       #F4F0E8;
+            --surface:  #FDFAF4;
+            --surface2: #EDE8DE;
+            --surface3: #E3DDCF;
+            --border:   rgba(0,0,0,0.07);
+            --border2:  rgba(0,0,0,0.14);
+            --gold:     #9A7020;
+            --gold2:    #C09040;
+            --gold-bg:  rgba(154,112,32,0.08);
+            --gold-glow:rgba(154,112,32,0.18);
+            --text:     #1A1712;
+            --text2:    #7C7568;
+            --text3:    #B5AFA4;
+            --green:    #15803d;
+            --green-bg: rgba(21,128,61,0.08);
+            --amber:    #b45309;
+            --amber-bg: rgba(180,83,9,0.08);
+            --red:      #b91c1c;
+            --red-bg:   rgba(185,28,28,0.08);
+            --blue:     #1d4ed8;
+            --blue-bg:  rgba(29,78,216,0.08);
+        }
+
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background 0.35s, color 0.35s;
+        }
+
+        /* Grid texture overlay */
+        body::after {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                    linear-gradient(var(--border) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.5;
+        }
+
+        .layout { display:flex; min-height:100vh; position:relative; z-index:1; }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 28px 16px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            gap: 0;
+            transition: background 0.35s;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0 10px; margin-bottom: 36px;
+        }
+        .logo-mark {
+            width: 34px; height: 34px;
+            border: 1.5px solid var(--gold);
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; color: var(--gold);
+            box-shadow: 0 0 16px var(--gold-glow);
+            flex-shrink: 0;
+        }
+        .logo-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px; font-weight: 500;
+            color: var(--text); letter-spacing: 0.03em;
+        }
+        .logo-text span { color: var(--gold); }
+
+        .nav-section { margin-bottom: 28px; }
+        .nav-label {
+            font-size: 9px; font-weight: 600;
+            letter-spacing: 0.18em; color: var(--text3);
+            text-transform: uppercase; padding: 0 12px; margin-bottom: 6px;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 12px; border-radius: 10px;
+            font-size: 13px; color: var(--text2);
+            cursor: pointer; transition: all 0.15s;
+            font-weight: 400; margin-bottom: 2px;
+            border: 1px solid transparent;
+        }
+        .nav-item:hover { background: var(--surface2); color: var(--text); }
+        .nav-item.active {
+            background: var(--gold-bg);
+            border-color: rgba(196,163,90,0.18);
+            color: var(--gold);
+        }
+        .nav-icon { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+        .nav-item.active .nav-icon { opacity: 1; }
+
+        .sidebar-bottom { margin-top: auto; }
+        .user-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 10px; border-radius: 12px;
+            background: var(--surface2); border: 1px solid var(--border);
+            transition: background 0.35s;
+        }
+        .user-avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: var(--gold-bg);
+            border: 1.5px solid var(--gold);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 600;
+            color: var(--gold); font-family: 'Outfit', sans-serif;
+            flex-shrink: 0;
+        }
+        .user-name { font-size: 13px; font-weight: 500; color: var(--text); }
+        .user-role { font-size: 11px; color: var(--text2); }
+
+        /* ── MAIN ── */
+        .main {
+            margin-left: var(--sidebar-w);
+            flex: 1; padding: 32px 36px;
+            transition: padding 0.35s;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            display: flex; align-items: flex-start;
+            justify-content: space-between; margin-bottom: 32px;
+        }
+        .page-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 36px; font-weight: 400;
+            color: var(--text); letter-spacing: -0.01em; line-height: 1;
+        }
+        .page-sub { font-size: 13px; color: var(--text2); margin-top: 6px; }
+
+        .topbar-right { display:flex; align-items:center; gap:10px; }
+
+        .theme-btn {
+            width: 38px; height: 38px; border-radius: 10px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--gold); font-size: 15px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.25s;
+        }
+        .theme-btn:hover { border-color: var(--gold); background: var(--gold-bg); }
+
+        .add-btn {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--gold); color: #16120A;
+            border: none; padding: 10px 22px; border-radius: 10px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+            box-shadow: 0 4px 20px var(--gold-glow);
+            letter-spacing: 0.03em;
+        }
+        .add-btn:hover { background: var(--gold2); transform: translateY(-1px); box-shadow: 0 8px 28px var(--gold-glow); }
+
+        /* ── STATS GRID ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px; margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px; padding: 22px 24px;
+            position: relative; overflow: hidden;
+            transition: border-color 0.2s, background 0.35s;
+            cursor: default;
+        }
+        .stat-card::before {
+            content: ''; position: absolute;
+            top: -30px; right: -30px;
+            width: 90px; height: 90px; border-radius: 50%;
+            opacity: 0.07;
+        }
+        .stat-card:hover { border-color: var(--border2); }
+        .stat-card.s-gold::before   { background: var(--gold); }
+        .stat-card.s-amber::before  { background: var(--amber); }
+        .stat-card.s-green::before  { background: var(--green); }
+        .stat-card.s-blue::before   { background: var(--blue); }
+
+        .stat-label {
+            font-size: 9px; font-weight: 600;
+            letter-spacing: 0.16em; color: var(--text3);
+            text-transform: uppercase; margin-bottom: 12px;
+        }
+        .stat-num {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 40px; font-weight: 400; letter-spacing: -0.02em;
+            line-height: 1;
+        }
+        .s-gold  .stat-num { color: var(--gold); }
+        .s-amber .stat-num { color: var(--amber); }
+        .s-green .stat-num { color: var(--green); }
+        .s-blue  .stat-num { color: var(--blue); }
+        .stat-sub { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+        /* Thin accent line at bottom of stat card */
+        .stat-card::after {
+            content: ''; position: absolute;
+            bottom: 0; left: 0; right: 0; height: 2px;
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .stat-card.s-gold::after  { background: linear-gradient(90deg, var(--gold), transparent); }
+        .stat-card.s-amber::after { background: linear-gradient(90deg, var(--amber), transparent); }
+        .stat-card.s-green::after { background: linear-gradient(90deg, var(--green), transparent); }
+        .stat-card.s-blue::after  { background: linear-gradient(90deg, var(--blue), transparent); }
+        .stat-card:hover::after   { opacity: 1; }
+
+        /* ── CONTENT GRID ── */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 330px;
+            gap: 20px; align-items: start;
+        }
+
+        /* ── PANEL ── */
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px; overflow: hidden;
+            transition: background 0.35s;
+        }
+        .panel-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 24px; border-bottom: 1px solid var(--border);
+        }
+        .panel-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px; font-weight: 400; color: var(--text);
+        }
+        .panel-count {
+            font-size: 11px; font-weight: 500;
+            background: var(--surface2); color: var(--text2);
+            padding: 3px 12px; border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+
+        /* ── FILTERS ── */
+        .filters {
+            display: flex; gap: 6px; padding: 14px 24px;
+            border-bottom: 1px solid var(--border); overflow-x: auto;
+        }
+        .filter-btn {
+            font-size: 12px; font-weight: 500;
+            padding: 5px 16px; border-radius: 20px;
+            border: 1px solid var(--border);
+            background: transparent; color: var(--text2);
+            cursor: pointer; font-family: 'Outfit', sans-serif;
+            white-space: nowrap; transition: all 0.15s;
+        }
+        .filter-btn:hover { border-color: var(--border2); color: var(--text); }
+        .filter-btn.active {
+            background: var(--gold-bg); border-color: rgba(196,163,90,0.35);
+            color: var(--gold);
+        }
+
+        /* ── TASK LIST ── */
+        .task-list { padding: 6px 0; }
+        .task-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 24px; border-bottom: 1px solid var(--border);
+            transition: background 0.12s; cursor: pointer;
+            animation: slideIn 0.2s ease forwards;
+        }
+        @keyframes slideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+        .task-item:hover { background: var(--surface2); }
+        .task-item:last-child { border-bottom: none; }
+
+        .task-check {
+            width: 20px; height: 20px; flex-shrink: 0;
+            border: 1.5px solid var(--border2); border-radius: 6px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s;
+        }
+        .task-check.done { background: var(--green); border-color: var(--green); }
+        .task-check.done::after { content: '✓'; font-size: 11px; color: #fff; font-weight: 700; }
+
+        .task-body { flex: 1; min-width: 0; }
+        .task-name { font-size: 14px; font-weight: 400; color: var(--text); margin-bottom: 4px; }
+        .task-name.done { text-decoration: line-through; color: var(--text3); }
+        .task-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+        .badge {
+            font-size: 10px; font-weight: 600;
+            padding: 2px 9px; border-radius: 20px;
+            letter-spacing: 0.05em; text-transform: uppercase;
+        }
+        .badge-HIGH   { background: var(--red-bg);   color: var(--red);   border: 1px solid rgba(248,113,113,0.2); }
+        .badge-MEDIUM { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+        .badge-LOW    { background: var(--green-bg); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+        .badge-PENDING    { background: var(--surface3); color: var(--text2); }
+        .badge-COMPLETED  { background: var(--green-bg); color: var(--green); }
+        .task-date { font-size: 11px; color: var(--text3); }
+
+        .task-actions { display:flex; gap:4px; opacity:0; transition:opacity 0.15s; }
+        .task-item:hover .task-actions { opacity:1; }
+        .action-btn {
+            width: 28px; height: 28px; border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface2); color: var(--text2);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; transition: all 0.12s;
+        }
+        .action-btn:hover       { border-color: var(--gold); color: var(--gold); }
+        .action-btn.del:hover   { border-color: var(--red);  color: var(--red); }
+
+        /* ── EMPTY STATE ── */
+        .empty-state { text-align: center; padding: 60px 24px; color: var(--text3); }
+        .empty-icon {
+            width: 48px; height: 48px; border-radius: 14px;
+            background: var(--surface2); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; margin: 0 auto 14px;
+        }
+        .empty-title { font-family:'Cormorant Garamond',serif; font-size:20px; color:var(--text2); margin-bottom:6px; }
+        .empty-text  { font-size: 13px; }
+
+        /* ── FORM PANEL ── */
+        .form-panel { position: sticky; top: 32px; }
+        .form-body  { padding: 22px 24px; }
+        .field      { margin-bottom: 16px; }
+        .field-label {
+            font-size: 9px; font-weight: 600;
+            letter-spacing: 0.14em; color: var(--text3);
+            text-transform: uppercase; display: block; margin-bottom: 7px;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px; color: var(--text);
+            font-family: 'Outfit', sans-serif; font-size: 13px;
+            padding: 11px 13px; outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.35s;
+            appearance: none;
+        }
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        select:focus {
+            border-color: var(--gold);
+            background: var(--surface3);
+            box-shadow: 0 0 0 3px var(--gold-bg);
+        }
+        input::placeholder { color: var(--text3); opacity: 0.7; }
+        select option { background: var(--surface2); }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4); }
+
+        .priority-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+        .priority-opt {
+            padding: 8px 6px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--surface2);
+            color: var(--text2); font-size: 12px; font-weight: 500;
+            text-align: center; cursor: pointer; transition: all 0.12s;
+            font-family: 'Outfit', sans-serif;
+        }
+        .priority-opt[data-val="HIGH"].sel   { background: var(--red-bg);   border-color: rgba(248,113,113,0.4); color: var(--red); }
+        .priority-opt[data-val="MEDIUM"].sel { background: var(--amber-bg); border-color: rgba(251,191,36,0.4);  color: var(--amber); }
+        .priority-opt[data-val="LOW"].sel    { background: var(--green-bg); border-color: rgba(74,222,128,0.4); color: var(--green); }
+
+        .status-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .status-opt {
+            padding: 8px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--surface2);
+            color: var(--text2); font-size: 12px; font-weight: 500;
+            text-align: center; cursor: pointer; transition: all 0.12s;
+            font-family: 'Outfit', sans-serif;
+        }
+        .status-opt[data-val="PENDING"].sel   { background: var(--gold-bg);  border-color: rgba(196,163,90,0.35); color: var(--gold); }
+        .status-opt[data-val="COMPLETED"].sel { background: var(--green-bg); border-color: rgba(74,222,128,0.4);  color: var(--green); }
+
+        .form-actions { display: flex; gap: 8px; margin-top: 18px; }
+        .btn-submit {
+            flex: 1; background: var(--gold); color: #16120A;
+            border: none; padding: 12px; border-radius: 10px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s; letter-spacing: 0.04em;
+            box-shadow: 0 4px 16px var(--gold-glow);
+        }
+        .btn-submit:hover { background: var(--gold2); transform: translateY(-1px); }
+
+        .btn-cancel {
+            background: var(--surface2); color: var(--text2);
+            border: 1px solid var(--border); padding: 12px 16px;
+            border-radius: 10px; font-size: 13px; cursor: pointer;
+            font-family: 'Outfit', sans-serif; transition: all 0.15s; display: none;
+        }
+        .btn-cancel:hover { color: var(--text); border-color: var(--border2); }
+
+        .edit-banner {
+            display: none; margin: 0 24px 14px;
+            padding: 8px 14px;
+            background: var(--gold-bg); border: 1px solid rgba(196,163,90,0.25);
+            border-radius: 8px; font-size: 12px; color: var(--gold);
+        }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; bottom: 28px; right: 28px;
+            background: var(--surface2); border: 1px solid var(--border2);
+            border-radius: 12px; padding: 12px 20px; font-size: 13px;
+            color: var(--text); display: flex; align-items: center; gap: 10px;
+            transform: translateY(80px); opacity: 0;
+            transition: all 0.28s cubic-bezier(0.34,1.56,0.64,1);
+            z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast-dot  { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+
+        /* ── AUTH PAGE ── */
+        #authPage {
+            position: fixed; inset: 0;
+            display: flex; align-items: stretch;
+            z-index: 9999;
+            --au-gold:      #C4A35A;
+            --au-gold-glow: rgba(196,163,90,0.12);
+            --au-panel:     #0C0C12;
+            --au-form-bg:   #0E0E16;
+            --au-form-text: #F2EEE6;
+            --au-form-muted:#6E6C7A;
+            --au-form-border:rgba(255,255,255,0.07);
+            --au-form-input: rgba(255,255,255,0.04);
+            --au-muted:     #6E6C7A;
+            --au-text:      #F2EEE6;
+        }
+        #authPage.light {
+            --au-form-bg:    #F7F4EF;
+            --au-form-text:  #1C1A18;
+            --au-form-muted: #9A9486;
+            --au-form-border:rgba(0,0,0,0.09);
+            --au-form-input: rgba(0,0,0,0.04);
+        }
+        .au-wrapper { width:100%; display:flex; position:relative; }
+
+        .au-theme-btn {
+            position: absolute; top: 22px; right: 22px; z-index: 20;
+            width: 38px; height: 38px; border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--au-gold); font-size: 15px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+        }
+        .au-theme-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--au-gold); }
+
+        .au-brand {
+            width: 46%; background: var(--au-panel);
+            border-right: 1px solid rgba(196,163,90,0.12);
+            display: flex; flex-direction: column;
+            padding: 44px 48px; position: relative; overflow: hidden;
+        }
+        .au-brand::before {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background:
+                    radial-gradient(ellipse 420px 320px at 85% 15%, rgba(196,163,90,0.07) 0%, transparent 65%),
+                    radial-gradient(ellipse 200px 200px at 10% 85%, rgba(196,163,90,0.04) 0%, transparent 65%);
+        }
+        .au-brand::after {
+            content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.45;
+            background-image:
+                    linear-gradient(rgba(196,163,90,0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(196,163,90,0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .au-logo { display:flex; align-items:center; gap:11px; position:relative; z-index:1; }
+        .au-logo-mark {
+            width:34px; height:34px; border:1.5px solid var(--au-gold);
+            border-radius:9px; display:flex; align-items:center; justify-content:center;
+            font-size:15px; color:var(--au-gold);
+            box-shadow: 0 0 16px rgba(196,163,90,0.2), inset 0 0 10px rgba(196,163,90,0.05);
+        }
+        .au-logo-name {
+            font-family:'Cormorant Garamond',serif;
+            font-size:21px; font-weight:500;
+            color:var(--au-text); letter-spacing:0.04em;
+        }
+        .au-art {
+            flex:1; display:flex; align-items:center; justify-content:center;
+            position:relative; z-index:1;
+        }
+        .au-art svg { overflow:visible; }
+        .au-copy { position:relative; z-index:1; }
+        .au-headline {
+            font-family:'Cormorant Garamond',serif;
+            font-size:46px; font-weight:300;
+            color:var(--au-text); line-height:1.1;
+            letter-spacing:-0.015em; margin-bottom:14px;
+        }
+        .au-headline em { font-style:italic; color:var(--au-gold); }
+        .au-desc { font-size:13px; color:var(--au-muted); line-height:1.75; margin-bottom:30px; max-width:290px; }
+        .au-stats { display:flex; border-top:1px solid rgba(255,255,255,0.06); padding-top:24px; }
+        .au-stat { flex:1; padding-right:20px; margin-right:20px; border-right:1px solid rgba(255,255,255,0.06); }
+        .au-stat:last-child { border-right:none; padding-right:0; margin-right:0; }
+        .au-stat-num {
+            display:block; font-family:'Cormorant Garamond',serif;
+            font-size:28px; font-weight:500;
+            color:var(--au-gold); letter-spacing:-0.02em; line-height:1;
+        }
+        .au-stat-lbl { font-size:10px; color:var(--au-muted); letter-spacing:0.1em; text-transform:uppercase; margin-top:4px; }
+
+        .au-form-side {
+            flex:1; background:var(--au-form-bg);
+            display:flex; align-items:center; justify-content:center;
+            padding:48px 52px; transition:background 0.35s; position:relative;
+        }
+        .au-form-side::before {
+            content:''; position:absolute; top:0; left:0;
+            width:120px; height:120px;
+            background:radial-gradient(circle at 0 0, rgba(196,163,90,0.06), transparent 70%);
+            pointer-events:none;
+        }
+        .au-form-inner { width:100%; max-width:370px; position:relative; z-index:1; }
+        .au-tabs {
+            display:flex; position:relative;
+            background:var(--au-form-input);
+            border:1px solid var(--au-form-border);
+            border-radius:12px; padding:4px; margin-bottom:38px;
+        }
+        .au-tab {
+            flex:1; padding:10px 8px; border:none; background:none;
+            font-family:'Outfit',sans-serif; font-size:13px; font-weight:500;
+            color:var(--au-form-muted); cursor:pointer;
+            border-radius:9px; transition:color 0.2s; position:relative; z-index:1;
+        }
+        .au-tab.act { color:var(--au-form-text); }
+        .au-tab-slider {
+            position:absolute; top:4px; left:4px;
+            width:calc(50% - 4px); height:calc(100% - 8px);
+            background:var(--au-form-bg); border-radius:8px;
+            border:1px solid var(--au-form-border);
+            box-shadow:0 2px 10px rgba(0,0,0,0.12);
+            transition:transform 0.32s cubic-bezier(0.34,1.56,0.64,1);
+            pointer-events:none;
+        }
+        .au-tab-slider.r { transform:translateX(100%); }
+        .au-section { animation:auIn 0.28s ease; }
+        .au-section.hide { display:none; }
+        @keyframes auIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+        .au-eyebrow {
+            font-size:10px; font-weight:600;
+            letter-spacing:0.16em; text-transform:uppercase;
+            color:var(--au-gold); margin-bottom:7px;
+        }
+        .au-form-title {
+            font-family:'Cormorant Garamond',serif;
+            font-size:38px; font-weight:400;
+            color:var(--au-form-text); line-height:1.05;
+            letter-spacing:-0.01em; margin-bottom:7px;
+        }
+        .au-form-sub { font-size:13px; color:var(--au-form-muted); line-height:1.6; margin-bottom:28px; }
+        .au-field { margin-bottom:16px; }
+        .au-field label {
+            display:block; font-size:10px; font-weight:600;
+            letter-spacing:0.11em; text-transform:uppercase;
+            color:var(--au-form-muted); margin-bottom:7px;
+        }
+        .au-field input {
+            width:100%; background:var(--au-form-input);
+            border:1px solid var(--au-form-border);
+            border-radius:10px; color:var(--au-form-text);
+            font-family:'Outfit',sans-serif; font-size:14px;
+            padding:13px 15px; outline:none;
+            transition:border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+        .au-field input:focus {
+            border-color:var(--au-gold);
+            background:transparent;
+            box-shadow:0 0 0 3px rgba(196,163,90,0.1);
+        }
+        .au-field input::placeholder { color:var(--au-form-muted); opacity:0.55; }
+        .au-btn {
+            width:100%; padding:14px; margin-top:6px;
+            background:var(--au-gold); border:none;
+            border-radius:10px; color:#16120A;
+            font-family:'Outfit',sans-serif; font-size:14px; font-weight:600;
+            letter-spacing:0.06em; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; gap:10px;
+            transition:all 0.22s; position:relative; overflow:hidden;
+        }
+        .au-btn:hover { background:#D4B46A; transform:translateY(-2px); box-shadow:0 10px 28px rgba(196,163,90,0.28); }
+        .au-btn:active { transform:translateY(0); }
+        .au-btn-arrow { font-size:16px; transition:transform 0.2s; }
+        .au-btn:hover .au-btn-arrow { transform:translateX(4px); }
+        .au-divider {
+            display:flex; align-items:center; gap:12px;
+            margin:22px 0 0; font-size:11px;
+            color:var(--au-form-muted); letter-spacing:0.05em;
+        }
+        .au-divider::before,.au-divider::after {
+            content:''; flex:1; height:1px; background:var(--au-form-border);
+        }
+        .au-switch { text-align:center; font-size:13px; color:var(--au-form-muted); margin-top:18px; }
+        .au-switch a { color:var(--au-gold); cursor:pointer; text-decoration:none; font-weight:500; transition:opacity 0.15s; }
+        .au-switch a:hover { opacity:0.75; }
+        .au-trust {
+            display:flex; align-items:center; justify-content:center;
+            gap:16px; margin-top:28px;
+            padding-top:22px; border-top:1px solid var(--au-form-border);
+        }
+        .au-badge { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--au-form-muted); }
+        .au-badge-icon { font-size:12px; }
+    </style>
+</head>
+<body>
+
+<!-- ============================================================
+     AUTH PAGE
+============================================================ -->
+<div id="authPage">
+    <div class="au-wrapper">
+        <button class="au-theme-btn" id="auThemeBtn" onclick="toggleAuthTheme()" title="Toggle theme">
+            <span id="auThemeIcon">☾</span>
+        </button>
+
+        <!-- LEFT BRAND -->
+        <div class="au-brand">
+            <div class="au-logo">
+                <div class="au-logo-mark">✦</div>
+                <span class="au-logo-name">TaskFlow</span>
+            </div>
+            <div class="au-art">
+                <svg viewBox="0 0 300 300" width="300" height="300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="150" cy="150" r="130" stroke="rgba(196,163,90,0.09)" stroke-width="0.6"/>
+                    <circle cx="150" cy="150" r="100" stroke="rgba(196,163,90,0.12)" stroke-width="0.6"/>
+                    <circle cx="150" cy="150" r="70"  stroke="rgba(196,163,90,0.10)" stroke-width="0.6"/>
+                    <circle cx="150" cy="150" r="40"  stroke="rgba(196,163,90,0.15)" stroke-width="0.6"/>
+                    <circle cx="150" cy="150" r="14"  stroke="rgba(196,163,90,0.25)" stroke-width="0.6"/>
+                    <circle cx="150"   cy="80"   r="70" stroke="rgba(196,163,90,0.08)" stroke-width="0.5"/>
+                    <circle cx="150"   cy="220"  r="70" stroke="rgba(196,163,90,0.08)" stroke-width="0.5"/>
+                    <circle cx="89.4"  cy="115"  r="70" stroke="rgba(196,163,90,0.08)" stroke-width="0.5"/>
+                    <circle cx="210.6" cy="115"  r="70" stroke="rgba(196,163,90,0.08)" stroke-width="0.5"/>
+                    <circle cx="89.4"  cy="185"  r="70" stroke="rgba(196,163,90,0.08)" stroke-width="0.5"/>
+                    <circle cx="210.6" cy="185"  r="70" stroke="rgba(196,163,90,0.08)" stroke-width="0.5"/>
+                    <g stroke="rgba(196,163,90,0.07)" stroke-width="0.5">
+                        <line x1="150" y1="20"  x2="150" y2="280"/>
+                        <line x1="20"  y1="150" x2="280" y2="150"/>
+                        <line x1="57"  y1="57"  x2="243" y2="243"/>
+                        <line x1="243" y1="57"  x2="57"  y2="243"/>
+                        <line x1="20"  y1="89"  x2="280" y2="211"/>
+                        <line x1="20"  y1="211" x2="280" y2="89"/>
+                        <line x1="89"  y1="20"  x2="211" y2="280"/>
+                        <line x1="211" y1="20"  x2="89"  y2="280"/>
+                    </g>
+                    <g fill="rgba(196,163,90,0.35)">
+                        <circle cx="150"   cy="80"  r="2.5"/>
+                        <circle cx="150"   cy="220" r="2.5"/>
+                        <circle cx="89.4"  cy="115" r="2.5"/>
+                        <circle cx="210.6" cy="115" r="2.5"/>
+                        <circle cx="89.4"  cy="185" r="2.5"/>
+                        <circle cx="210.6" cy="185" r="2.5"/>
+                    </g>
+                    <circle cx="150" cy="150" r="4" fill="#C4A35A" opacity="0.9"/>
+                    <circle cx="150" cy="150" r="8" stroke="rgba(196,163,90,0.3)" stroke-width="0.8" fill="none"/>
+                    <circle r="4" fill="#C4A35A" opacity="0.85">
+                        <animateMotion dur="22s" repeatCount="indefinite">
+                            <mpath xlink:href="#orbitPath"/>
+                        </animateMotion>
+                    </circle>
+                    <path id="orbitPath" d="M150,20 A130,130 0 1,1 149.99,20" fill="none"/>
+                    <circle r="2.5" fill="rgba(196,163,90,0.6)">
+                        <animateMotion dur="14s" repeatCount="indefinite" keyPoints="1;0" keyTimes="0;1" calcMode="linear">
+                            <mpath xlink:href="#orbitInner"/>
+                        </animateMotion>
+                    </circle>
+                    <path id="orbitInner" d="M150,80 A70,70 0 1,1 149.99,80" fill="none"/>
+                    <g stroke="rgba(196,163,90,0.3)" stroke-width="1">
+                        <line x1="20" y1="20" x2="36" y2="20"/><line x1="20" y1="20" x2="20" y2="36"/>
+                        <line x1="280" y1="20" x2="264" y2="20"/><line x1="280" y1="20" x2="280" y2="36"/>
+                        <line x1="20" y1="280" x2="36" y2="280"/><line x1="20" y1="280" x2="20" y2="264"/>
+                        <line x1="280" y1="280" x2="264" y2="280"/><line x1="280" y1="280" x2="280" y2="264"/>
+                    </g>
+                </svg>
+            </div>
+            <div class="au-copy">
+                <div class="au-headline">Work <em>without</em><br>the chaos.</div>
+                <p class="au-desc">A precision-built workspace for professionals who care deeply about what gets done — and how.</p>
+                <div class="au-stats">
+                    <div class="au-stat"><span class="au-stat-num">12k+</span><span class="au-stat-lbl">Teams</span></div>
+                    <div class="au-stat"><span class="au-stat-num">98%</span><span class="au-stat-lbl">Satisfaction</span></div>
+                    <div class="au-stat"><span class="au-stat-num">4.9★</span><span class="au-stat-lbl">Rating</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT FORM -->
+        <div class="au-form-side" id="auFormSide">
+            <div class="au-form-inner">
+                <div class="au-tabs">
+                    <button class="au-tab act" id="auTabLogin" onclick="switchAuthTab('login')">Sign In</button>
+                    <button class="au-tab" id="auTabReg" onclick="switchAuthTab('register')">Create Account</button>
+                    <div class="au-tab-slider" id="auSlider"></div>
+                </div>
+
+                <div class="au-section" id="auLoginSec">
+                    <div class="au-eyebrow">Welcome back</div>
+                    <div class="au-form-title">Sign in.</div>
+                    <p class="au-form-sub">Access your workspace and continue where you left off.</p>
+                    <div class="au-field"><label>Username</label><input id="loginUser" type="text" placeholder="your_username" autocomplete="username"></div>
+                    <div class="au-field"><label>Password</label><input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+                    <button class="au-btn" onclick="login()">Continue <span class="au-btn-arrow">→</span></button>
+                    <div class="au-divider">or</div>
+                    <div class="au-switch">No account yet? <a onclick="switchAuthTab('register')">Create one — it's free</a></div>
+                    <div class="au-trust">
+                        <div class="au-badge"><span class="au-badge-icon">🔒</span> Encrypted</div>
+                        <div class="au-badge"><span class="au-badge-icon">⚡</span> Instant access</div>
+                        <div class="au-badge"><span class="au-badge-icon">✦</span> No ads ever</div>
+                    </div>
+                </div>
+
+                <div class="au-section hide" id="auRegSec">
+                    <div class="au-eyebrow">Get started — free</div>
+                    <div class="au-form-title">Join us.</div>
+                    <p class="au-form-sub">Build your workspace in seconds. No credit card required.</p>
+                    <div class="au-field"><label>Choose a username</label><input id="regUser" type="text" placeholder="your_username" autocomplete="username"></div>
+                    <div class="au-field"><label>Create a password</label><input id="regPass" type="password" placeholder="Min. 8 characters" autocomplete="new-password"></div>
+                    <button class="au-btn" onclick="register()">Create Account <span class="au-btn-arrow">→</span></button>
+                    <div class="au-divider">or</div>
+                    <div class="au-switch">Already have an account? <a onclick="switchAuthTab('login')">Sign in here</a></div>
+                    <div class="au-trust">
+                        <div class="au-badge"><span class="au-badge-icon">🔒</span> Encrypted</div>
+                        <div class="au-badge"><span class="au-badge-icon">⚡</span> Instant access</div>
+                        <div class="au-badge"><span class="au-badge-icon">✦</span> No ads ever</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     DASHBOARD
+============================================================ -->
+<div class="layout">
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-mark">✦</div>
+            <div class="logo-text">Task<span>Flow</span></div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">Workspace</div>
+            <div class="nav-item active" onclick="showDashboardView(this)">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                Dashboard
+            </div>
+            <div class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                My Tasks
+            </div>
+            <div class="nav-item" onclick="showCalendarView(this)">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                Calendar
+            </div>
+            <div class="nav-item active" onclick="showDashboardView(this)">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                Dashboard
+            </div>
+            <div id="calendarPage" style="display:none; padding:20px;">
+                <div id="calendar"></div>
+            </div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">Views</div>
+            <div class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+                All Tasks
+            </div>
+            <div class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                High Priority
+            </div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="user-card">
+                <div class="user-avatar">YO</div>
+                <div style="flex:1">
+                    <div class="user-name">USER</div>
+                    <div class="user-role">Developer</div>
+                </div>
+                <button onclick="logout()" title="Logout" style="background:none; border:1px solid var(--border); border-radius:8px; color:var(--text2); width:60px; height:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; flex-shrink:0; transition:all 0.15s;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">Logout</button>
+            </div>
+        </div>
+
+    </aside>
+
+    <main class="main">
+        <div class="topbar">
+            <div>
+                <div class="page-title">Task Dashboard</div>
+                <div class="page-sub">Manage and track your work efficiently</div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" id="dashThemeBtn" onclick="toggleDashTheme()" title="Toggle theme">
+                    <span id="dashThemeIcon">☾</span>
+                </button>
+                <button class="add-btn" onclick="focusForm()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+                    New Task
+                </button>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card s-gold">
+                <div class="stat-label">Total Tasks</div>
+                <div class="stat-num" id="statTotal">0</div>
+                <div class="stat-sub">All time</div>
+            </div>
+            <div class="stat-card s-amber">
+                <div class="stat-label">Pending</div>
+                <div class="stat-num" id="statPending">0</div>
+                <div class="stat-sub">In progress</div>
+            </div>
+            <div class="stat-card s-green">
+                <div class="stat-label">Completed</div>
+                <div class="stat-num" id="statDone">0</div>
+                <div class="stat-sub">Well done</div>
+            </div>
+            <div class="stat-card s-blue">
+                <div class="stat-label">High Priority</div>
+                <div class="stat-num" id="statHigh">0</div>
+                <div class="stat-sub">Needs attention</div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Tasks</div>
+                    <span class="panel-count" id="taskCount">0 tasks</span>
+                </div>
+                <div class="filters">
+                    <button class="filter-btn active" onclick="setFilter('ALL',this)">All</button>
+                    <button class="filter-btn" onclick="setFilter('PENDING',this)">Pending</button>
+                    <button class="filter-btn" onclick="setFilter('COMPLETED',this)">Completed</button>
+                    <button class="filter-btn" onclick="setFilter('HIGH',this)">High Priority</button>
+                </div>
+                <div class="task-list" id="taskList">
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <div class="empty-title">Nothing here yet</div>
+                        <div class="empty-text">Add your first task to get started.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-panel">
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title" id="formTitle">New Task</div>
+                    </div>
+                    <div class="edit-banner" id="editBanner">✏️ Editing task</div>
+                    <div class="form-body">
+                        <input type="hidden" id="taskId">
+                        <div class="field">
+                            <label class="field-label">Task Name</label>
+                            <input type="text" id="taskName" placeholder="What needs to be done?">
+                        </div>
+                        <div class="field">
+                            <label class="field-label">Description</label>
+                            <input type="text" id="description" placeholder="Add more details...">
+                        </div>
+                        <div class="field">
+                            <label class="field-label">Priority</label>
+                            <div class="priority-grid">
+                                <button class="priority-opt" data-val="HIGH"   onclick="selectPriority('HIGH')">🔴 High</button>
+                                <button class="priority-opt" data-val="MEDIUM" onclick="selectPriority('MEDIUM')">🟡 Medium</button>
+                                <button class="priority-opt" data-val="LOW"    onclick="selectPriority('LOW')">🟢 Low</button>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="field-label">Status</label>
+                            <div class="status-toggle">
+                                <button class="status-opt sel" data-val="PENDING"   onclick="selectStatus('PENDING')">⏳ Pending</button>
+                                <button class="status-opt"     data-val="COMPLETED" onclick="selectStatus('COMPLETED')">✅ Done</button>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="field-label">Due Date</label>
+                            <input type="date" id="dueDate">
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn-cancel" id="cancelBtn" onclick="cancelEdit()">Cancel</button>
+                            <button class="btn-submit" id="submitBtn" onclick="handleSubmit()">Add Task</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="calendarView" style="display:none; background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:24px;">
+            <div id="calendarEl"></div>
+        </div>
+
+    </main>
+</div>
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toastMsg">Done!</span></div>
+
+<script>
+    /* ── INIT ── */
+    const baseUrl = "/tasks";
+    let allTasks = [];
+    let currentFilter = 'ALL';
+    let selectedPriority = 'LOW';
+    let selectedStatus = 'PENDING';
+
+    window.onload = function () {
+        document.querySelector(".layout").style.display = "none";
+        document.getElementById("authPage").style.display = "flex";
+    };
+
+    /* ── DATA ── */
+    function getTasks() {
+        fetch(baseUrl, {
+            credentials: "include"
+        })
+            .then(r => r.json())
+            .then(data => { allTasks = data; renderAll(); })
+            .catch(err => {
+                console.error("GET TASK ERROR:", err);
+            });
+    }
+    function renderAll() { updateStats(allTasks); renderTasks(filterTasks(allTasks)); }
+    function filterTasks(tasks) {
+        if (currentFilter === 'ALL')       return tasks;
+        if (currentFilter === 'PENDING')   return tasks.filter(t => t.status === 'PENDING');
+        if (currentFilter === 'COMPLETED') return tasks.filter(t => t.status === 'COMPLETED');
+        if (currentFilter === 'HIGH')      return tasks.filter(t => t.priority === 'HIGH');
+        return tasks;
+    }
+    function setFilter(f, btn) {
+        currentFilter = f;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderTasks(filterTasks(allTasks));
+    }
+    function updateStats(tasks) {
+        document.getElementById('statTotal').textContent   = tasks.length;
+        document.getElementById('statPending').textContent = tasks.filter(t => t.status === 'PENDING').length;
+        document.getElementById('statDone').textContent    = tasks.filter(t => t.status === 'COMPLETED').length;
+        document.getElementById('statHigh').textContent    = tasks.filter(t => t.priority === 'HIGH').length;
+    }
+    function renderTasks(tasks) {
+        const list = document.getElementById('taskList');
+        document.getElementById('taskCount').textContent = tasks.length + ' task' + (tasks.length !== 1 ? 's' : '');
+        if (!tasks.length) {
+            list.innerHTML = `<div class="empty-state">
+                <div class="empty-icon">📋</div>
+                <div class="empty-title">Nothing here yet</div>
+                <div class="empty-text">Add your first task to get started.</div>
+            </div>`;
+            return;
+        }
+        list.innerHTML = tasks.map(t => `
+            <div class="task-item">
+                <div class="task-check ${t.status === 'COMPLETED' ? 'done' : ''}" onclick="quickToggle(${t.id},'${t.status}')"></div>
+                <div class="task-body">
+                    <div class="task-name ${t.status === 'COMPLETED' ? 'done' : ''}">${t.taskName}</div>
+                    <div class="task-meta">
+                        ${t.priority ? `<span class="badge badge-${t.priority}">${t.priority}</span>` : ''}
+                        ${t.dueDate  ? `<span class="task-date">📅 ${t.dueDate}</span>` : ''}
+                    </div>
+                </div>
+                <div class="task-actions">
+                    <button class="action-btn" onclick="editTask(${t.id},'${t.taskName}','${t.description||''}','${t.priority}','${t.status}','${t.dueDate||''}')">✏️</button>
+                    <button class="action-btn del" onclick="deleteTask(${t.id})">🗑</button>
+                </div>
+            </div>`).join('');
+    }
+
+    /* ── FORM ── */
+    function selectPriority(val) {
+        selectedPriority = val;
+        document.querySelectorAll('.priority-opt').forEach(b => b.classList.toggle('sel', b.dataset.val === val));
+    }
+    function selectStatus(val) {
+        selectedStatus = val;
+
+        document.querySelectorAll('.status-opt').forEach(btn => {
+            btn.classList.remove('sel');
+        });
+
+        document.querySelector(`.status-opt[data-val="${val}"]`).classList.add('sel');
+    }
+    function handleSubmit() {
+        const id = document.getElementById('taskId').value;
+        const task = {
+            taskName: document.getElementById('taskName').value,
+            description: document.getElementById('description').value,
+            priority: selectedPriority,
+            status: selectedStatus,
+
+            dueDate: document.getElementById('dueDate').value || null
+        };
+        if (!task.taskName) {
+            document.getElementById('taskName').focus();
+            return;
+        }
+        if (id) {
+            fetch(`${baseUrl}/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(task),
+                credentials: "include"
+            })
+                .then(() => {
+                    clearForm();
+                    getTasks();
+                    showToast('Task updated!');
+                });
+        } else {
+            fetch(baseUrl, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(task),
+                credentials: "include"
+            })
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error("POST FAILED: " + res.status);
+                    }
+                    return res.text();
+                })
+                .then(() => {
+                    clearForm();
+                    getTasks();
+                    showToast('Task added!');
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Task NOT saved");
+                });
+        }
+    }
+    function editTask(id, name, desc, priority, status, date) {
+        document.getElementById('taskId').value      = id;
+        document.getElementById('taskName').value    = name;
+        document.getElementById('description').value = desc;
+        document.getElementById('dueDate').value     = date;
+        selectPriority(priority); selectStatus(status);
+        document.getElementById('submitBtn').textContent    = 'Update Task';
+        document.getElementById('cancelBtn').style.display = 'block';
+        document.getElementById('formTitle').textContent   = 'Edit Task';
+        document.getElementById('editBanner').style.display = 'block';
+        document.getElementById('taskName').focus();
+    }
+    function quickToggle(id, currentStatus) {
+        const newStatus = currentStatus === 'COMPLETED' ? 'PENDING' : 'COMPLETED';
+        const task = allTasks.find(t => t.id === id);
+        if (!task) return;
+        fetch(`${baseUrl}/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...task, status:newStatus}) })
+            .then(() => { getTasks(); showToast(newStatus === 'COMPLETED' ? 'Task completed! 🎉' : 'Marked as pending'); });
+    }
+    function deleteTask(id) {
+        fetch(`${baseUrl}/${id}`, { method:'DELETE' }).then(() => { getTasks(); showToast('Task deleted'); });
+    }
+    function cancelEdit() { clearForm(); }
+    function focusForm() {
+        document.getElementById('taskName').focus();
+        document.getElementById('taskName').scrollIntoView({ behavior:'smooth', block:'center' });
+    }
+    function clearForm() {
+        document.getElementById('taskId').value      = '';
+        document.getElementById('taskName').value    = '';
+        document.getElementById('description').value = '';
+        document.getElementById('dueDate').value     = '';
+        selectedPriority = ''; selectedStatus = 'PENDING';
+        document.querySelectorAll('.priority-opt').forEach(b => b.classList.remove('sel'));
+        document.querySelectorAll('.status-opt').forEach(b => b.classList.toggle('sel', b.dataset.val === 'PENDING'));
+        document.getElementById('submitBtn').textContent    = 'Add Task';
+        document.getElementById('cancelBtn').style.display = 'none';
+        document.getElementById('formTitle').textContent   = 'New Task';
+        document.getElementById('editBanner').style.display = 'none';
+    }
+
+    /* ── TOAST ── */
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        document.getElementById('toastMsg').textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    /* ── AUTH ── */
+    function login() {
+        const username = document.getElementById("loginUser").value;
+        const password = document.getElementById("loginPass").value;
+
+        fetch("/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `username=${username}&password=${password}`,
+            credentials: "include"
+        })
+            .then(() => {
+                return fetch("/tasks", { credentials: "include" });
+            })
+            .then(res => {
+                if (res.status === 200) {
+
+                    // ✅ REMOVE BLOCKING AUTH SCREEN
+                    const auth = document.getElementById("authPage");
+                    auth.style.display = "none";
+                    auth.style.pointerEvents = "none";
+
+                    document.querySelector(".layout").style.display = "flex";
+
+                    getTasks();
+
+                } else {
+                    alert("Login failed");
+                }
+            })
+            .catch(() => alert("Login error"));
+    }
+    function register() {
+        const username = document.getElementById("regUser").value;
+        const password = document.getElementById("regPass").value;
+
+        fetch("/tasks/register", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({ username, password })
+        })
+            .then(res => res.text())
+            .then(msg => {
+                alert(msg);
+
+                document.getElementById("regUser").value = "";
+                document.getElementById("regPass").value = "";
+
+                // 🔥 SWITCH TO LOGIN TAB
+                switchAuthTab('login');
+            })
+            .catch(() => alert("Registration failed"));
+    }
+
+    /* ── AUTH TABS ── */
+    function switchAuthTab(tab) {
+        const loginSec = document.getElementById('auLoginSec');
+        const regSec   = document.getElementById('auRegSec');
+        const slider   = document.getElementById('auSlider');
+        const tabLogin = document.getElementById('auTabLogin');
+        const tabReg   = document.getElementById('auTabReg');
+        if (tab === 'login') {
+            loginSec.classList.remove('hide'); regSec.classList.add('hide');
+            slider.classList.remove('r'); tabLogin.classList.add('act'); tabReg.classList.remove('act');
+        } else {
+            loginSec.classList.add('hide'); regSec.classList.remove('hide');
+            slider.classList.add('r'); tabLogin.classList.remove('act'); tabReg.classList.add('act');
+        }
+    }
+
+    /* ── AUTH THEME ── */
+    let auTheme = 'dark';
+    function toggleAuthTheme() {
+        auTheme = auTheme === 'dark' ? 'light' : 'dark';
+        const page = document.getElementById('authPage');
+        const icon = document.getElementById('auThemeIcon');
+        if (auTheme === 'light') {
+            page.classList.add('light'); icon.textContent = '☀';
+            page.style.setProperty('--au-form-bg',     '#F7F4EF');
+            page.style.setProperty('--au-form-text',   '#1C1A18');
+            page.style.setProperty('--au-form-muted',  '#9A9486');
+            page.style.setProperty('--au-form-border', 'rgba(0,0,0,0.09)');
+            page.style.setProperty('--au-form-input',  'rgba(0,0,0,0.04)');
+        } else {
+            page.classList.remove('light'); icon.textContent = '☾';
+            page.style.setProperty('--au-form-bg',     '#0E0E16');
+            page.style.setProperty('--au-form-text',   '#F2EEE6');
+            page.style.setProperty('--au-form-muted',  '#6E6C7A');
+            page.style.setProperty('--au-form-border', 'rgba(255,255,255,0.07)');
+            page.style.setProperty('--au-form-input',  'rgba(255,255,255,0.04)');
+        }
+    }
+
+    /* ── DASHBOARD THEME ── */
+    let dashTheme = 'dark';
+    function toggleDashTheme() {
+        dashTheme = dashTheme === 'dark' ? 'light' : 'dark';
+        document.body.classList.toggle('light', dashTheme === 'light');
+        document.getElementById('dashThemeIcon').textContent = dashTheme === 'light' ? '☀' : '☾';
+    }
+    let calendarInstance = null;
+
+    function showCalendarView(el) {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+        document.querySelector('.stats-grid').style.display = 'none';
+        document.querySelector('.content-grid').style.display = 'none';
+        document.getElementById('calendarView').style.display = 'block';
+
+        const events = allTasks.filter(t => t.dueDate).map(t => ({
+            title: t.taskName,
+            start: t.dueDate,
+            color: t.priority === 'HIGH' ? '#f87171' : t.priority === 'MEDIUM' ? '#fbbf24' : '#4ade80'
+        }));
+
+        if (!calendarInstance) {
+            calendarInstance = new FullCalendar.Calendar(document.getElementById('calendarEl'), {
+                initialView: 'dayGridMonth',
+                height: 'auto',
+                events: events,
+                headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }
+            });
+            calendarInstance.render();
+        } else {
+            calendarInstance.removeAllEvents();
+            calendarInstance.addEventSource(events);
+        }
+    }
+
+    function showDashboardView(el) {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+        document.querySelector('.stats-grid').style.display = 'grid';
+        document.querySelector('.content-grid').style.display = 'grid';
+        document.getElementById('calendarView').style.display = 'none';
+    }
+
+    /* ── ENTER KEY ── */
+    function logout() {
+        fetch("/logout", { method: "POST", credentials: "include" })
+            .then(() => {
+                allTasks = [];
+                document.querySelector(".layout").style.display = "none";
+                document.getElementById("authPage").style.display = "flex";
+                document.getElementById("loginUser").value = "";
+                document.getElementById("loginPass").value = "";
+                switchAuthTab('login');
+            });
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && document.getElementById('authPage').style.display !== 'none') {
+            const loginVisible = !document.getElementById('auLoginSec').classList.contains('hide');
+            if (loginVisible) login(); else register();
+        }
+    });
+
+</script>
+</body>
+</html>
