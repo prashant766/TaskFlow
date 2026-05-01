@@ -79,4 +79,9 @@ public class MyController {
         userRepo.save(user);
         return ResponseEntity.ok("USER REGISTERED");
     }
+
+    @GetMapping("/tasks/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("up");
+    }
 }

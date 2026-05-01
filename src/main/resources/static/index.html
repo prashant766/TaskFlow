@@ -656,6 +656,35 @@
 </head>
 <body>
 
+<!-- Paste this BEFORE your authPage div -->
+<div id="serverLoader" style="position:fixed;inset:0;background:#09090D;display:flex;align-items:center;justify-content:center;z-index:99999;">
+    <!-- (the full loading screen HTML from the preview above) -->
+</div>
+
+<script>
+    // Poll your Render backend until it responds
+    function pingServer() {
+        fetch("https://taskflow-1-ls3h.onrender.com/tasks/health", {
+            credentials: "include"
+        })
+            .then(res => {
+                if (res.ok || res.status === 401) {
+                    // 401 is fine — server is UP, just not logged in yet
+                    document.getElementById('serverLoader').style.display = 'none';
+                    document.getElementById('authPage').style.display = 'flex';
+                } else {
+                    setTimeout(pingServer, 5000);
+                }
+            })
+            .catch(() => setTimeout(pingServer, 5000)); // still sleeping, retry
+    }
+
+    window.onload = function() {
+        document.getElementById('authPage').style.display = 'none';
+        document.querySelector('.layout').style.display = 'none';
+        pingServer();
+    };
+</script>
 <!-- ============================================================
      AUTH PAGE
 ============================================================ -->
