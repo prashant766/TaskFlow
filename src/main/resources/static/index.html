@@ -986,10 +986,6 @@
     let selectedPriority = 'LOW';
     let selectedStatus = 'PENDING';
 
-    window.onload = function () {
-        document.querySelector(".layout").style.display = "none";
-        document.getElementById("authPage").style.display = "flex";
-    };
 
     /* ── DATA ── */
     function getTasks() {
@@ -1234,6 +1230,21 @@
                 switchAuthTab('login');
             })
             .catch(() => alert("Registration failed"));
+    }
+
+    function pingServer() {
+        fetch("https://taskflow-1-ls3h.onrender.com/tasks/health", {
+            credentials: "include"
+        })
+            .then(res => {
+                if (res.ok || res.status === 401) {
+                    document.getElementById('serverLoader').style.display = 'none';
+                    document.getElementById('authPage').style.display = 'flex';
+                } else {
+                    setTimeout(pingServer, 3000);
+                }
+            })
+            .catch(() => setTimeout(pingServer, 3000));
     }
 
     /* ── AUTH TABS ── */
